@@ -1,0 +1,7 @@
+[submodule "_notebooks/nyt-nlp"]
+	path = _notebooks/nyt-nlp
+	url = https://github.com/d10genes/nyt-nlp.git
+	branch = jekyll
+[submodule "_notebooks/traffic-atl"]
+	path = _notebooks/traffic-atl
+	url = https://github.com/d10genes/traffic-atl.git
