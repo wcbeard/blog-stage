@@ -1,0 +1,6 @@
+toolz
+pytest
+PyYAML
+flake8
+ipdb
+nbconvert
