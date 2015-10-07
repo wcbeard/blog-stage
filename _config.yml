@@ -4,8 +4,7 @@ email:       wcbeard10@gmail.com
 author:      Chris Beard
 description: "A simple, beautiful theme for Jekyll that emphasizes content rather than aesthetic fluff."
 baseurl:     "/blog"
-url:         "/"  # d10genes.github.io
-# url:         "http://d10genes.github.io"  # d10genes.github.io
+url:         "http://d10genes.github.io/blog/"  # "/"  # d10genes.github.io
 date_format: "%b %-d, %Y"
 
 # Google services
