@@ -5,3 +5,9 @@
 [submodule "_notebooks/traffic-atl"]
 	path = _notebooks/traffic-atl
 	url = https://github.com/d10genes/traffic-atl.git
+[submodule "_notebooks/crf-edu"]
+	path = _notebooks/crf-edu
+	url = https://github.com/d10genes/crf-edu.git
+[submodule "_notebooks/_notebooks/crf-edu"]
+	path = _notebooks/_notebooks/crf-edu
+	url = https://github.com/d10genes/crf-edu.git
