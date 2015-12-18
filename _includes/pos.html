@@ -1,0 +1,962 @@
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
+
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+  });
+</script>
+
+<!-- <script type="text/javascript" src="/MathJax/MathJax.js?config=TeX-AMS_HTML-full"></script> -->
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML-full"> </script>
+<style type="text/css">
+
+  .input_hidden {
+    display: none;
+    //  margin-top: 5px;
+  }
+  .container {
+    /*width:140%; //!important;*/
+    width: none; //!important;
+    border: none !important;
+  }
+  div.prompt {
+    display: none;
+  }
+  .CodeMirror{
+    /*font-family: "Consolas", sans-serif;*/
+    font-size:18px;
+    line-height: 30px;
+  }
+  pre, kbd, samp {
+    /*font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;*/
+    /*line-height: 30px;*/
+    font-size:18px;
+  }
+  pre.code {
+    font-family: Consolas, monospace;
+    font-size: 12px;
+  }*/
+
+  /*p {
+    font-size:20px;
+    font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+    line-height: 30px;
+    text-align: left;
+  }*/
+  div.cell{
+    max-width:100%;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  div.text_cell_render{
+    max-width:100%;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  h2,h3,h4{
+    text-align: left;
+  }
+
+
+
+  </style>
+
+  <script>
+  $(document).ready(function(){
+    $(".output_wrapper").click(function(){
+      $(this).prev('.input_hidden').slideToggle();
+    });
+  })
+  </script>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Linear-chain-CRFs">Linear chain CRFs<a class="anchor-link" href="#Linear-chain-CRFs">&#182;</a></h1><p>This is less of a blog post, and more of my annotated progress in implementing CRF's based on Charles Elkan's very excellent <a href="http://videolectures.net/cikm08_elkan_llmacrf/">video</a> and <a href="http://cseweb.ucsd.edu/~elkan/250Bwinter2012/loglinearCRFs.pdf">pdf</a> tutorials in order to have a better understanding of log-linear models.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="kn">from</span> <span class="nn">py3k_imports</span> <span class="k">import</span> <span class="o">*</span> 
+<span class="kn">import</span> <span class="nn">project_imports3</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">project_imports3</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">project_imports3</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+
+<span class="n">pu</span><span class="o">.</span><span class="n">psettings</span><span class="p">(</span><span class="n">pd</span><span class="p">)</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">150</span>   <span class="c"># 200</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>WARNING: myfunctools not found
+Hiding __getattr__
+Unhiding __getattr__
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="o">%%</span><span class="nx">javascript</span>
+<span class="nx">IPython</span><span class="p">.</span><span class="nx">keyboard_manager</span><span class="p">.</span><span class="nx">command_shortcuts</span><span class="p">.</span><span class="nx">add_shortcut</span><span class="p">(</span><span class="s1">&#39;Ctrl-k&#39;</span><span class="p">,</span><span class="s1">&#39;ipython.move-selected-cell-up&#39;</span><span class="p">)</span>
+<span class="nx">IPython</span><span class="p">.</span><span class="nx">keyboard_manager</span><span class="p">.</span><span class="nx">command_shortcuts</span><span class="p">.</span><span class="nx">add_shortcut</span><span class="p">(</span><span class="s1">&#39;Ctrl-j&#39;</span><span class="p">,</span><span class="s1">&#39;ipython.move-selected-cell-down&#39;</span><span class="p">)</span>
+<span class="nx">IPython</span><span class="p">.</span><span class="nx">keyboard_manager</span><span class="p">.</span><span class="nx">command_shortcuts</span><span class="p">.</span><span class="nx">add_shortcut</span><span class="p">(</span><span class="s1">&#39;Shift-m&#39;</span><span class="p">,</span><span class="s1">&#39;ipython.merge-selected-cell-with-cell-after&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+
+
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+IPython.keyboard_manager.command_shortcuts.add_shortcut('Ctrl-k','ipython.move-selected-cell-up')
+IPython.keyboard_manager.command_shortcuts.add_shortcut('Ctrl-j','ipython.move-selected-cell-down')
+IPython.keyboard_manager.command_shortcuts.add_shortcut('Shift-m','ipython.merge-selected-cell-with-cell-after')
+</script>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">Counter</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="n">Df</span> <span class="o">=</span> <span class="n">Dict</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="nb">str</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">major</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">unicode</span> <span class="o">=</span> <span class="nb">str</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="kn">import</span> <span class="nn">utils</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">utils</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">utils</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">crf</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">crf</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">crf</span> <span class="k">import</span> <span class="o">*</span>
+<span class="n">FeatUtils</span><span class="o">.</span><span class="n">bookend</span> <span class="o">=</span> <span class="k">False</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="n">Series</span><span class="o">.</span><span class="n">__matmul__</span> <span class="o">=</span> <span class="n">Series</span><span class="o">.</span><span class="n">dot</span>
+<span class="n">DataFrame</span><span class="o">.</span><span class="n">__matmul__</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="o">.</span><span class="n">dot</span>
+
+<span class="kn">from</span> <span class="nn">matmul_new</span> <span class="k">import</span> <span class="n">test_matmul</span>
+<span class="n">test_matmul</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Probabilistic-model">Probabilistic model<a class="anchor-link" href="#Probabilistic-model">&#182;</a></h2><p>Given a sequence $\bar x$, the linear chain CRF model gives the probability of a corresponding sequence $\bar y$ as follows, for feature functions $F_j$, where each $F_j$ is a sum of a corresponding lower level feature function $f_j$ over every element of the sequence:</p>
+$$
+p(\bar y | \bar x;w) =
+\frac {1} {Z(\bar x, w)}
+\exp \sum_j w_j F_j(\bar x, \bar y)
+$$$$
+F_j(\bar x, \bar y) = 
+\sum_{i=1}^n f_j(y_{i-1}, y_i, \bar x, i)
+$$<p>$Z(\bar x, w)$ is the partition function, that sums the probabilities of all possible sequences to normalize the probability:</p>
+$$
+Z(x, w) = \sum_{y' \in Y} \exp \sum_{j=1} ^J w_j F_j (x, y').
+$$<p>This way of summing feature functions along a sequence can be seen as a way of extending logistic regression from a single (or multiclass) output to a model that outputs sequences.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Argmax">Argmax<a class="anchor-link" href="#Argmax">&#182;</a></h3><p>Computing the most likely sequence $\text{argmax}_{\bar y} p(\bar y | \bar x;w)$ naively involves iterating through the exponentially large space of every possible sequence that can be built from the tag vocabulary, rendering the computation impractical for even medium sized tag-spaces.</p>
+<p>Since the scoring function only depends on 2 (consecutive in this situation) elements of $\bar y$, argmax can be computed in polynomial time with a table ($\in ℝ^{|Y| \times |y|}$). $U_{ij}$ is the highest score for sequences ending in $y_i$ at position $y_j$. It is useful to compute the most likely sequence in terms of $g_i$, which sums over all lower level functions $f_j$ evaluated at position $i$:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+$$
+g_i(y_ {i-1}, y_i) = \sum^J_{j=1} w_j f_j (y_ {i-1}, y_i, \bar x, i)
+$$
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Generate-maximum-score-matrix-U">Generate maximum score matrix U<a class="anchor-link" href="#Generate-maximum-score-matrix-U">&#182;</a></h3>$$U(k, v) = \max_u [U(k-1, u) + g_k(u,v)]$$$$U(1, vec) = \max_{y_0} [U(0, y_0) + g_k(y_0,vec)]$$<p>This implementation is pretty slow, because every low level feature function is evaluated at each $i, y_{i-1}$ and $y_i$, for each feature function $f_j$ ($\mathcal{O}(m^2 n J )$ where $J=$ number of feature functions, $m=$ number of possible tags and $n=$ length of sequence $\bar y$). Also, using python functions in the inner-loop is slow. This could be significantly reduced if the feature functions could be arranged such that they would only be evaluated for the relevant combinations of $x_i, y_{i-1}$ and $y_i$. I started arranging them in this way in <code>dependency.py</code>, but the complexity got a bit too unwieldy for a toy educational project.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">init_u</span><span class="p">(</span><span class="n">m0</span><span class="p">):</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">m0</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="n">mu</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">mu</span><span class="p">[</span><span class="n">ymax</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">init_score</span><span class="p">(</span><span class="n">tags</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">START</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
+    <span class="s">&quot;Base case for recurrent score calculation U&quot;</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="k">if</span> <span class="n">sort</span> <span class="k">else</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">i</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">i</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">get_u</span><span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">gf</span><span class="p">:</span> <span class="s">&quot;int -&gt; (Y, Y&#39;) -&gt; float&quot;</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">collect</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="k">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s">&#39;([max score], [max ix])&#39;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Recursively build up g_i matrices bottom up, adding y-1 score</span>
+<span class="sd">    to get max y score. Returns score.</span>
+<span class="sd">    - k is in terms of y vector, which is augmented with beginning and end tags</span>
+<span class="sd">    - also returns indices yprev that maximize y at each level to help reconstruct</span>
+<span class="sd">        most likely sequence</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">testprint</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="n">imx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">pt</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">get_u</span><span class="p">(</span><span class="n">imx</span><span class="p">,</span> <span class="n">gf</span><span class="o">=</span><span class="n">gf</span><span class="p">,</span> <span class="n">collect</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">init_score</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span> <span class="n">START</span><span class="p">)],</span> <span class="p">[]</span>
+
+    <span class="n">uprevs</span><span class="p">,</span> <span class="n">ixprevs</span> <span class="o">=</span> <span class="n">get_u</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">gf</span><span class="o">=</span><span class="n">gf</span><span class="p">,</span> <span class="n">collect</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="n">gmat</span> <span class="o">=</span> <span class="n">getmat</span><span class="p">(</span><span class="n">gf</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+    <span class="n">uadd</span> <span class="o">=</span> <span class="n">gmat</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">uprevs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="s">&#39;index&#39;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c"># START tag only possible at beginning.</span>
+        <span class="c"># There should be a better way of imposing these constraints</span>
+        <span class="n">uadd</span><span class="p">[</span><span class="n">START</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">imx</span><span class="p">:</span>
+        <span class="n">uadd</span><span class="p">[</span><span class="n">END</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c"># END only possible at the...end</span>
+    
+    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">idxmax</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">START</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">gf</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>  <span class="c"># uadd.ix[START].idxmax()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">idxmax</span> <span class="o">=</span> <span class="n">uadd</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+    <span class="n">pt</span><span class="p">(</span><span class="s">&#39;idxmax:&#39;</span><span class="p">,</span> <span class="n">idxmax</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="n">retu</span><span class="p">,</span> <span class="n">reti</span> <span class="o">=</span> <span class="n">uprevs</span> <span class="o">+</span> <span class="p">[</span><span class="n">uadd</span><span class="o">.</span><span class="n">max</span><span class="p">()],</span> <span class="n">ixprevs</span> <span class="o">+</span> <span class="p">[</span><span class="n">idxmax</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">collect</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">retu</span><span class="p">,</span> <span class="n">reti</span>
+    <span class="k">return</span> <span class="n">s2df</span><span class="p">(</span><span class="n">retu</span><span class="p">),</span> <span class="n">s2df</span><span class="p">(</span><span class="n">reti</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">mlp</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tagsrev</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Y</span><span class="p">]</span><span class="o">=</span><span class="p">[</span><span class="n">END</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Y</span><span class="p">]:</span>
+    <span class="s">&quot;Most likely sequence&quot;</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mlp</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">idxs</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">tagsrev</span><span class="o">=</span><span class="n">tagsrev</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tagsrev</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">tag</span> <span class="o">=</span> <span class="n">tagsrev</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">yprev</span> <span class="o">=</span> <span class="n">idxs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">tag</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">mlp</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tagsrev</span><span class="o">=</span><span class="n">tagsrev</span> <span class="o">+</span> <span class="p">[</span><span class="n">yprev</span><span class="p">])</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">xbar</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">gf</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="s">&quot;Return argmax_y with corresponding score&quot;</span>
+    <span class="k">if</span> <span class="n">gf</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="n">ws</span> <span class="ow">or</span> <span class="n">mkwts1</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">gf</span> <span class="o">=</span> <span class="n">G</span><span class="p">(</span><span class="n">ws</span><span class="o">=</span><span class="n">ws</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span> <span class="n">xbar</span><span class="o">=</span><span class="n">xbar</span><span class="p">)</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="n">get_u</span><span class="p">(</span><span class="n">gf</span><span class="o">=</span><span class="n">gf</span><span class="p">,</span> <span class="n">collect</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">mlp</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">END</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    
+<span class="c"># path2, score2 = predict(xbar=EasyList([&#39;wd1&#39;, &#39;pre-end&#39;, &#39;whatevs&#39;]),</span>
+<span class="c">#                         fs=no_test_getu3.fs,</span>
+<span class="c">#                         tags=[START, &#39;TAG1&#39;, &#39;PENULTAG&#39;, END])</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="kn">import</span> <span class="nn">test</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">test</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">test</span> <span class="k">import</span> <span class="o">*</span>
+ 
+<span class="n">no_test_getu1</span><span class="p">(</span><span class="n">get_u</span><span class="p">,</span> <span class="n">mlp</span><span class="p">)</span>
+<span class="n">no_test_getu2</span><span class="p">(</span><span class="n">get_u</span><span class="p">,</span> <span class="n">mlp</span><span class="p">)</span>
+<span class="n">no_test_getu3</span><span class="p">(</span><span class="n">get_u</span><span class="p">,</span> <span class="n">mlp</span><span class="p">)</span>
+
+<span class="n">test_corp</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Gradient">Gradient<a class="anchor-link" href="#Gradient">&#182;</a></h2>$$\frac{\partial}{\partial w_j} \log p(y | x;w) = F_j (x, y) - \frac1 {Z(x, w)} \sum_{y'} F_j (x, y') [\exp \sum_{j'} w_{j'} F_{j'} (x, y')]$$$$= F_j (x, y) - E_{y' \sim  p(y | x;w) } [F_j(x,y')]$$<h3 id="Forward-backward-algorithm">Forward-backward algorithm<a class="anchor-link" href="#Forward-backward-algorithm">&#182;</a></h3><ul>
+<li>Partition function $Z(\bar x, w) = \sum_{\bar y} \exp \sum _{j=1} ^ J w_j F_j (\bar x, \bar y) $ can be intractible if calculated naively (similar to argmax); forward-backward vectors can make it easier to compute</li>
+</ul>
+$$\alpha (k + 1,v) = \sum_u \alpha (k,u)[\exp g_{k+1}(u,v)] \in ℝ^m$$$$\alpha (0,y) = I(y=START)$$$$\beta (u, k) = \sum_v [\exp g_{k+1} (u, v)] \beta(v, k+1) $$$$\beta (u, n+1) = I(u= END) $$<p>Compute partition function $Z$ from either forward or backward vectors</p>
+$$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[There seems to be an error in the notes, which state that $Z(\bar x, w) = \sum_v \alpha(n, v) $. If this is the case, $Z$ calculated with $\alpha$ will never get a contribution from $g_{n+1}$, while $Z$ calculated with $\beta$ will in the $\beta(u, n)$ step.]</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Check correctness of forward and backward vectors.</p>
+<ul>
+<li>$ Z(\bar x, w) = \beta(START, 0) = \alpha(n+1, END) $</li>
+<li>For all positions $k=0...n+1$, $\sum_u \alpha(k, u) \beta(u, k) = Z(\bar x, w)$</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">mk_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">)</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="n">gf</span><span class="o">.</span><span class="n">tags</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">testprint</span><span class="p">(</span><span class="n">vb</span><span class="p">)</span>
+    
+    <span class="nd">@memoize</span>
+    <span class="k">def</span> <span class="nf">get_asum</span><span class="p">(</span><span class="n">knext</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">knext</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+            <span class="c"># The first use of the forward vectors is to write</span>
+            <span class="k">return</span> <span class="n">get_asum</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">knext</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;k ({}) cannot be negative&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">knext</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">init_score</span><span class="p">(</span><span class="n">tags</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">START</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">knext</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">gnext</span> <span class="o">=</span> <span class="n">gf</span><span class="p">(</span><span class="n">knext</span><span class="p">)</span><span class="o">.</span><span class="n">mat</span>
+        <span class="n">ak</span> <span class="o">=</span> <span class="n">get_asum</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">vb</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="s">&#39;exp[g{k1}] g{k1} a_{k}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k1</span><span class="o">=</span><span class="n">knext</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">p</span><span class="p">(</span><span class="n">side_by_side</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">),</span> <span class="n">gnext</span><span class="p">,</span> <span class="n">ak</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">))</span>
+        <span class="c"># expsum = Series([sum([ak[u] * np.exp(gnext.loc[u, v]) for u in tags]) for v in tags], index=tags)</span>
+        <span class="c"># vectorizing is much faster:</span>
+        <span class="n">expsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">ak</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">expsum</span>
+    <span class="k">return</span> <span class="n">get_asum</span>  <span class="c">#(knext, vb=vb)</span>
+
+
+<span class="k">def</span> <span class="nf">mk_bsum</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">testprint</span><span class="p">(</span><span class="n">vb</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">)</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="n">gf</span><span class="o">.</span><span class="n">tags</span>
+    
+    <span class="nd">@memoize</span>
+    <span class="k">def</span> <span class="nf">get_bsum</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_bsum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;{} &gt; length of x {} + 1&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">init_score</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">END</span><span class="p">)</span>
+        <span class="n">gnext</span> <span class="o">=</span> <span class="n">gf</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mat</span>
+        <span class="n">bnext</span> <span class="o">=</span> <span class="n">get_bsum</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vb</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;exp[g{}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s">&#39;g{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s">&#39;b_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+            <span class="n">p</span><span class="p">(</span><span class="n">side_by_side</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">),</span> <span class="n">gnext</span><span class="p">,</span> <span class="n">bnext</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">))</span>
+        <span class="c"># expsum = Series([sum([np.exp(gnext.loc[u, v]) * bnext[v] for v in tags]) for u in tags], index=tags)</span>
+        <span class="n">expsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">bnext</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">expsum</span>
+    <span class="k">return</span> <span class="n">get_bsum</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">test_fwd_bkwd</span><span class="p">():</span>
+    <span class="n">tgs</span> <span class="o">=</span> <span class="p">[</span><span class="n">START</span><span class="p">,</span> <span class="s">&#39;TAG1&#39;</span><span class="p">,</span> <span class="n">END</span><span class="p">]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">EasyList</span><span class="p">([</span><span class="s">&#39;wd1&#39;</span><span class="p">,</span> <span class="s">&#39;pre-end&#39;</span><span class="p">])</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c"># &#39;eq_wd1&#39;: mk_word_tag(&#39;wd1&#39;, &#39;TAG1&#39;),</span>
+        <span class="s">&#39;pre_endx&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">yp</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;pre-end&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">END</span><span class="p">)</span>
+         <span class="p">}</span>
+    <span class="n">ws</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">mkwts1</span><span class="p">(</span><span class="n">fs</span><span class="p">),</span> <span class="p">{</span><span class="s">&#39;pre_endx&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+    <span class="n">gf</span> <span class="o">=</span> <span class="n">G</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tgs</span><span class="p">,</span> <span class="n">xbar</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="n">ws</span><span class="p">)</span>
+
+    <span class="n">amkr</span> <span class="o">=</span> <span class="n">mk_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">)</span>
+    <span class="n">bmkr</span> <span class="o">=</span> <span class="n">mk_bsum</span><span class="p">(</span><span class="n">gf</span><span class="p">)</span>
+    <span class="n">za</span> <span class="o">=</span> <span class="n">amkr</span><span class="p">()</span><span class="o">.</span><span class="n">END</span>
+    <span class="n">zb</span> <span class="o">=</span> <span class="n">bmkr</span><span class="p">()</span><span class="o">.</span><span class="n">START</span>
+    <span class="k">assert</span> <span class="n">za</span> <span class="o">==</span> <span class="n">zb</span>
+    
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">amkr</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="err">@</span> <span class="n">bmkr</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="n">za</span>
+    <span class="k">return</span> <span class="n">za</span>
+    
+<span class="n">test_fwd_bkwd</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">Out[11]:</div>
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>24.464536456131405</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Calculate-expected-value-of-feature-function">Calculate expected value of feature function<a class="anchor-link" href="#Calculate-expected-value-of-feature-function">&#182;</a></h3><p>Weighted by conditional probability of $y'$ given $x$</p>
+$$
+E_{\bar y \sim  p(\bar y | \bar x;w) } [F_j(\bar  x, \bar y)] =
+\sum _{i=1} ^n \sum _{y_{i-1}} \sum _{y_i}
+    f_j(y_{i-1}, y_i, \bar x, i)
+    \frac {\alpha (i-1, y_{i-1})
+    [\exp g_i(y_{i-1}, y_i)]
+    \beta(y_i, i)
+    }
+    {Z(\bar x, w)}
+$$
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">sdot</span><span class="p">(</span><span class="n">s1</span><span class="p">:</span> <span class="n">Series</span><span class="p">,</span> <span class="n">s2</span><span class="p">:</span> <span class="n">Series</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;It&#39;s quite a bit faster to get the dot product</span>
+<span class="sd">    of raw numpy arrays rather than of the Series&quot;&quot;&quot;</span>
+    <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">s1</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="k">None</span><span class="p">],</span> <span class="n">s2</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="k">None</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">d1</span> <span class="err">@</span> <span class="n">d2</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">expectation2</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">fj</span><span class="p">):</span>
+    <span class="s">&quot;Faster matrix multiplication version&quot;</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="n">gf</span><span class="o">.</span><span class="n">tags</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">)</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ss2</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">asummer</span> <span class="o">=</span> <span class="n">mk_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">)</span>
+    <span class="n">bsummer</span> <span class="o">=</span> <span class="n">mk_bsum</span><span class="p">(</span><span class="n">gf</span><span class="p">)</span>
+    
+    <span class="n">za</span> <span class="o">=</span> <span class="n">partition</span><span class="p">(</span><span class="n">asummer</span><span class="o">=</span><span class="n">asummer</span><span class="p">)</span>
+    <span class="k">global</span> <span class="n">α</span><span class="p">,</span> <span class="n">β</span><span class="p">,</span> <span class="n">alpha_vec</span><span class="p">,</span> <span class="n">beta_vec</span><span class="p">,</span> <span class="n">gfix</span><span class="p">,</span> <span class="n">smat</span>
+    
+    <span class="k">def</span> <span class="nf">sumi</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+        <span class="n">gfix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gf</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">mat</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">alpha_vec</span> <span class="o">=</span> <span class="n">asummer</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">beta_vec</span> <span class="o">=</span> <span class="n">bsummer</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">fmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">fj</span><span class="p">(</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">]</span> <span class="k">for</span> <span class="n">yprev</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">])</span>
+        <span class="n">smat</span> <span class="o">=</span> <span class="n">sdot</span><span class="p">(</span><span class="n">alpha_vec</span><span class="p">,</span> <span class="n">beta_vec</span><span class="p">)</span> <span class="o">*</span> <span class="n">gfix</span> <span class="o">*</span> <span class="n">fmat</span>
+        <span class="k">return</span> <span class="n">smat</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="c">#.sum()</span>
+    
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">sumi</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)])</span> <span class="o">/</span> <span class="n">za</span>
+
+<span class="k">def</span> <span class="nf">expectation_</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">fj</span><span class="p">):</span>
+    <span class="s">&quot;Slow, looping version&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">)</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">za</span> <span class="o">=</span> <span class="n">get_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">)</span><span class="o">.</span><span class="n">END</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">gfix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gf</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">mat</span><span class="p">)</span>
+        <span class="n">alpha_vec</span> <span class="o">=</span> <span class="n">get_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">beta_vec</span> <span class="o">=</span> <span class="n">get_bsum</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">ss</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">fj</span><span class="p">(</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha_vec</span><span class="p">[</span><span class="n">yprev</span><span class="p">]</span> <span class="o">*</span> <span class="n">gfix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta_vec</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">yprev</span> <span class="ow">in</span> <span class="n">tgs</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tgs</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">ss</span> <span class="o">/</span> <span class="n">za</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Partial-derivative">Partial derivative<a class="anchor-link" href="#Partial-derivative">&#182;</a></h2><h3 id="Probability-function">Probability function<a class="anchor-link" href="#Probability-function">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">partial_d</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">fj</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">Fj</span><span class="o">=</span><span class="k">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">fj</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">fj</span><span class="p">)</span> <span class="k">else</span> <span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="p">[</span><span class="n">fj</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">Fj</span> <span class="ow">is</span> <span class="k">None</span><span class="p">:</span>
+        <span class="n">Fj</span> <span class="o">=</span> <span class="n">FeatUtils</span><span class="o">.</span><span class="n">mk_sum</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="c">#ex1 = expectation(gf, f)</span>
+    <span class="n">ex2</span> <span class="o">=</span> <span class="n">expectation2</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    <span class="c">#assert np.allclose(ex1, ex2)</span>
+    <span class="k">return</span> <span class="n">Fj</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="n">ex2</span>
+
+
+<span class="k">def</span> <span class="nf">prob</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
+    <span class="n">Fs</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">valmap</span><span class="p">(</span><span class="n">FeatUtils</span><span class="o">.</span><span class="n">mk_sum</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">Fj</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">gf</span><span class="o">.</span><span class="n">ws</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span> <span class="k">for</span> <span class="n">fname</span><span class="p">,</span> <span class="n">Fj</span> <span class="ow">in</span> <span class="n">Fs</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">norm</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">p</span>
+    <span class="n">za</span> <span class="o">=</span> <span class="n">partition</span><span class="p">(</span><span class="n">gf</span><span class="o">=</span><span class="n">gf</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">p</span> <span class="o">/</span> <span class="n">za</span>
+     
+
+<span class="k">def</span> <span class="nf">partition</span><span class="p">(</span><span class="n">gf</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">asummer</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">asummer</span> <span class="ow">or</span> <span class="n">gf</span><span class="p">,</span> <span class="s">&#39;Supply at least one argument&#39;</span>
+    <span class="n">asummer</span> <span class="o">=</span> <span class="n">asummer</span> <span class="ow">or</span> <span class="n">mk_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">asummer</span><span class="p">()</span><span class="o">.</span><span class="n">END</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Test-Partial">Test Partial<a class="anchor-link" href="#Test-Partial">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Train">Train<a class="anchor-link" href="#Train">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="n">λ</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">train_</span><span class="p">(</span><span class="n">zs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">EasyList</span><span class="p">,</span> <span class="n">AugmentY</span><span class="p">]],</span>
+          <span class="n">fjid</span><span class="o">=</span><span class="s">&#39;ly_VBZ&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">tgs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">rand</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="n">fj</span> <span class="o">=</span> <span class="n">fs</span><span class="p">[</span><span class="n">fjid</span><span class="p">]</span>
+    <span class="n">Fj</span> <span class="o">=</span> <span class="n">FeatUtils</span><span class="o">.</span><span class="n">mk_sum</span><span class="p">(</span><span class="n">fj</span><span class="p">)</span>
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">testprint</span><span class="p">(</span><span class="n">vb</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">zs</span><span class="p">:</span>
+        <span class="n">gf_</span> <span class="o">=</span> <span class="n">G</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tgs</span><span class="p">,</span> <span class="n">xbar</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="n">ws</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Fj</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>  <span class="c"># TODO: is this always right?</span>
+            <span class="k">continue</span>
+        <span class="n">pder</span> <span class="o">=</span> <span class="n">partial_d</span><span class="p">(</span><span class="n">gf_</span><span class="p">,</span> <span class="n">fj</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">Fj</span><span class="o">=</span><span class="n">Fj</span><span class="p">)</span>
+        <span class="n">wj0</span> <span class="o">=</span> <span class="n">ws</span><span class="p">[</span><span class="n">fjid</span><span class="p">]</span>
+        <span class="n">ws</span><span class="p">[</span><span class="n">fjid</span><span class="p">]</span> <span class="o">+=</span> <span class="n">λ</span> <span class="o">*</span> <span class="n">pder</span>
+        <span class="n">pt</span><span class="p">(</span><span class="s">&#39;wj: {} -&gt; {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wj0</span><span class="p">,</span> <span class="n">ws</span><span class="p">[</span><span class="n">fjid</span><span class="p">]))</span>
+        <span class="n">pt</span><span class="p">(</span><span class="s">&#39;pder: {:.2f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pder</span><span class="p">),</span> <span class="n">Fj</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ws</span>
+
+
+<span class="k">def</span> <span class="nf">train_j</span><span class="p">(</span><span class="n">zs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">EasyList</span><span class="p">,</span> <span class="n">AugmentY</span><span class="p">]],</span>
+          <span class="n">fjid</span><span class="o">=</span><span class="s">&#39;ly_VBZ&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=.</span><span class="mi">01</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">tgs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="n">ws1</span> <span class="o">=</span> <span class="n">ws</span>
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">testprint</span><span class="p">(</span><span class="n">vb</span><span class="p">)</span>
+    <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">nr</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+        <span class="n">pt</span><span class="p">(</span><span class="s">&#39;Iter&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">wj1</span> <span class="o">=</span> <span class="n">ws1</span><span class="p">[</span><span class="n">fjid</span><span class="p">]</span>
+        <span class="n">ws2</span> <span class="o">=</span> <span class="n">train_</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">fjid</span><span class="o">=</span><span class="n">fjid</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="n">ws1</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="n">vb</span><span class="p">,</span> <span class="n">tgs</span><span class="o">=</span><span class="n">tgs</span><span class="p">)</span>
+        <span class="n">wj2</span> <span class="o">=</span> <span class="n">ws2</span><span class="p">[</span><span class="n">fjid</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">((</span><span class="n">wj2</span> <span class="o">-</span> <span class="n">wj1</span><span class="p">)</span> <span class="o">/</span> <span class="n">wj1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span> \
+            <span class="ow">or</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">maxiter</span><span class="p">)</span> \
+            <span class="ow">or</span> <span class="p">(</span><span class="n">sec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">st</span> <span class="o">&gt;</span> <span class="n">sec</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">ws</span><span class="p">,</span> <span class="n">i</span>
+        <span class="n">ws1</span> <span class="o">=</span> <span class="n">ws2</span>
+        
+<span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">zs_</span><span class="p">,</span> <span class="n">gf</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=.</span><span class="mi">001</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">wst</span> <span class="o">=</span> <span class="p">(</span><span class="n">ws</span> <span class="ow">or</span> <span class="n">gf</span><span class="o">.</span><span class="n">ws</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">nr</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">zs</span> <span class="o">=</span> <span class="n">zs_</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+
+    <span class="k">for</span> <span class="n">fname</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">itime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">wst</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="n">train_j</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">fjid</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="n">wst</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="n">vb</span><span class="p">,</span> <span class="n">tgs</span><span class="o">=</span><span class="n">gf</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;trained in&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="s">&#39;iters: {:.2f} ({:.2f}s)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wst</span><span class="p">[</span><span class="n">fname</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">itime</span><span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">wst</span>
+
+<span class="c"># %time ws1c = train(zs, gf, mkwts1(gf.fs, 1), maxiter=100, tol=.005)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Evaluation">Evaluation<a class="anchor-link" href="#Evaluation">&#182;</a></h2><p>Since I'm maximizing the log-likelihood during testing, that would seem a natural measure to evaluate improvement. I'm a bit suspicious about bugs in my implementation, so I'd like to evaluate Hamming distance between actual $y$ and the predicted sequence see how much the predictions improve.</p>
+<h3 id="Load-data">Load data<a class="anchor-link" href="#Load-data">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;data/pos.train.txt&#39;</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">txt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    
+<span class="n">sents</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">None</span><span class="p">,</span> <span class="p">[</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">sent</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()])</span> <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">txt</span><span class="p">[:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="p">)])</span>
+<span class="n">X</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">itg</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">sents</span><span class="p">)</span>
+<span class="n">Y_</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">itg</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">sents</span><span class="p">)</span>
+<span class="n">Xa</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">EasyList</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+<span class="n">Ya</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">AugmentY</span><span class="p">,</span> <span class="n">Y_</span><span class="p">)</span>
+
+<span class="n">tags</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">tag</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">Y_</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">y</span> <span class="k">if</span> <span class="n">tag</span><span class="o">.</span><span class="n">isalpha</span><span class="p">()})</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="c"># common bigrams</span>
+<span class="n">bigs</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">Y_</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+        <span class="n">bigs</span><span class="p">[</span><span class="n">t1</span><span class="p">][</span><span class="n">t2</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="n">bigd</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">bigs</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="n">tags</span><span class="p">]</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span><span class="n">tags</span><span class="p">]</span>
+
+<span class="n">wcts_all</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">Counter</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">xi</span><span class="p">,</span> <span class="n">yi</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y_</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">xw</span><span class="p">,</span> <span class="n">yw</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">yi</span><span class="p">):</span>
+        <span class="n">wcts_all</span><span class="p">[</span><span class="n">xw</span><span class="p">][</span><span class="n">yw</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="c"># Split training and testing examples</span>
+<span class="n">Zs</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Xa</span><span class="p">,</span> <span class="n">Ya</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Zs</span><span class="p">),</span> <span class="s">&#39;examples&#39;</span><span class="p">)</span>
+<span class="n">Zstrn</span> <span class="o">=</span> <span class="n">Zs</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span>
+<span class="n">Ztst</span> <span class="o">=</span> <span class="n">Zs</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">201</span><span class="p">]</span>  <span class="c"># it&#39;s too slow right now, so 100 examples in each set should do</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>8936 examples
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">hamming</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">ypred</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
+    <span class="n">sm</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span> <span class="o">!=</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">ypred</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">sm</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">if</span> <span class="n">norm</span> <span class="k">else</span> <span class="n">sm</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="n">fs0</span> <span class="o">=</span> <span class="n">crf</span><span class="o">.</span><span class="n">fs</span>
+<span class="n">ws0</span> <span class="o">=</span> <span class="n">rand_weights</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">gf0</span> <span class="o">=</span> <span class="n">G</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs0</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="nb">sorted</span><span class="p">([</span><span class="n">START</span><span class="p">,</span> <span class="n">END</span><span class="p">]</span> <span class="o">+</span> <span class="n">tags</span><span class="p">),</span> <span class="n">xbar</span><span class="o">=</span><span class="n">EasyList</span><span class="p">([</span><span class="s">&#39;&#39;</span><span class="p">]),</span> <span class="n">ws</span><span class="o">=</span><span class="n">ws0</span><span class="p">)</span>
+
+<span class="o">%</span><span class="k">time</span> hams0 = [hamming(y.aug[1:-2], predict(gf=gf0._replace(xbar=x))[0][1:-2]) for x, y in Ztst[:]]
+<span class="nb">print</span><span class="p">(</span><span class="s">&#39;Initial error rate with random weights: {:.2%}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">hams0</span><span class="p">)))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Initial error rate with random weights: 77.69%
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This training takes forever...not recommended</p>
+
+<pre><code>%time ws_trn = train(Zstrn[:], gf, ws1e, maxiter=100, tol=.0005, sec=None, seed=3)</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="n">ws_trn</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;cap_nnp&#39;</span><span class="p">:</span> <span class="mf">5.42</span><span class="p">,</span> <span class="s">&#39;dig_cd&#39;</span><span class="p">:</span> <span class="mf">6.2</span><span class="p">,</span> <span class="s">&#39;dt_in&#39;</span><span class="p">:</span> <span class="mf">3.26</span><span class="p">,</span>
+ <span class="s">&#39;fst_dt&#39;</span><span class="p">:</span> <span class="mf">4.44</span><span class="p">,</span> <span class="s">&#39;fst_nnp&#39;</span><span class="p">:</span> <span class="mf">1.49</span><span class="p">,</span> <span class="s">&#39;last_nn&#39;</span><span class="p">:</span> <span class="mf">7.34</span><span class="p">,</span>
+ <span class="s">&#39;post_mr&#39;</span><span class="p">:</span> <span class="mf">6.68</span><span class="p">,</span> <span class="s">&#39;wd_a&#39;</span><span class="p">:</span> <span class="mf">10.17</span><span class="p">,</span> <span class="s">&#39;wd_and&#39;</span><span class="p">:</span> <span class="mf">10.64</span><span class="p">,</span>
+ <span class="s">&#39;wd_for&#39;</span><span class="p">:</span> <span class="mf">10.51</span><span class="p">,</span> <span class="s">&#39;wd_in&#39;</span><span class="p">:</span> <span class="mf">10.50</span><span class="p">,</span> <span class="s">&#39;wd_of&#39;</span><span class="p">:</span> <span class="mf">10.64</span><span class="p">,</span>
+ <span class="s">&#39;wd_the&#39;</span><span class="p">:</span> <span class="mf">12.9</span><span class="p">,</span> <span class="s">&#39;wd_to&#39;</span><span class="p">:</span> <span class="mf">11.18</span><span class="p">}</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="n">gf_trn</span> <span class="o">=</span> <span class="n">gf0</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">ws</span><span class="o">=</span><span class="n">ws_trn</span><span class="p">)</span>
+<span class="o">%</span><span class="k">time</span> hams_trn = [hamming(y.aug[1:-2], predict(gf=gf_trn._replace(xbar=x))[0][1:-2]) for x, y in Ztst[:]]
+<span class="nb">print</span><span class="p">(</span><span class="s">&#39;Error rate after training weights: {:.2%}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">hams_trn</span><span class="p">)))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>CPU times: user 42.9 s, sys: 234 ms, total: 43.1 s
+Wall time: 47.3 s
+Error rate after training weights: 64.34%
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The 78% to 64% error rate decrease seems to be a decent improvement, considering the small number of feature functions.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span class="o">!</span>osascript -e beep
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Extra">Extra<a class="anchor-link" href="#Extra">&#182;</a></h2>
+</div>
+</div>
+</div>
