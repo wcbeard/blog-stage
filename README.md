@@ -1,5 +1,7 @@
 # Note to self
 
+##Dev
+    jekyll serve --watch --baseurl ''
 ## Submodules
 ```
     git submodule add -b jekyll https://github.com/d10genes/nyt-nlp.git _notebooks/nyt-nlp
@@ -20,3 +22,7 @@ tags:       <Tags>
 ipynb:      <path to ipynb file>
 ---
 ```
+
+##Generate html posts from .md and .ilynb files
+
+    python nb2html.py -a
