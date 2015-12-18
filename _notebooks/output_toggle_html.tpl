@@ -16,7 +16,7 @@
 </script>
 
 <!-- <script type="text/javascript" src="/MathJax/MathJax.js?config=TeX-AMS_HTML-full"></script> -->
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML-full"> </script>
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML-full"> </script>
 <style type="text/css">
 
   .input_hidden {
