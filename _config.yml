@@ -8,7 +8,7 @@ url:         "http://d10genes.github.io/blog/"  # "/"  # d10genes.github.io
 date_format: "%b %-d, %Y"
 
 # Google services
-google_analytics:
+google_analytics: UA-40869107-1
 google_verification:
 
 # Optional features
