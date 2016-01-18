@@ -4,7 +4,7 @@
     jekyll serve --watch --baseurl ''
 ## Submodules
 ```
-    git submodule add -b jekyll https://github.com/d10genes/nyt-nlp.git _notebooks/nyt-nlp
+    # git submodule add -b jekyll https://github.com/d10genes/nyt-nlp.git _notebooks/nyt-nlp
     git submodule add https://github.com/d10genes/traffic-atl.git _notebooks/traffic-atl
     cd _notebooks/traffic-atl && git checkout .
 ```
@@ -23,6 +23,6 @@ ipynb:      <path to ipynb file>
 ---
 ```
 
-##Generate html posts from .md and .ilynb files
+##Generate html posts from .md and .ipynb files
 
     python nb2html.py -a
