@@ -11,3 +11,6 @@
 [submodule "_notebooks/_notebooks/crf-edu"]
 	path = _notebooks/_notebooks/crf-edu
 	url = https://github.com/d10genes/crf-edu.git
+[submodule "_notebooks/boy_who_lived"]
+	path = _notebooks/boy_who_lived
+	url = https://github.com/d10genes/boy_who_lived.git
