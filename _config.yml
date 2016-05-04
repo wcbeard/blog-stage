@@ -2,7 +2,7 @@
 title:       Blogistic Regression
 email:       wcbeard10@gmail.com
 author:      Chris Beard
-description: "A simple, beautiful theme for Jekyll that emphasizes content rather than aesthetic fluff."
+description: "Desc"
 baseurl:     "/blog"
 url:         "http://d10genes.github.io/blog/"  # "/"  # d10genes.github.io
 date_format: "%b %-d, %Y"
@@ -49,6 +49,40 @@ share_reddit: false
 share_stumbleupon: false
 share_hackernews: false
 
+text:
+  pagination:
+    newer: 'Newer'
+    older: 'Older'
+  share_buttons:
+    text:         'Share this post!'
+    facebook:     'Share on Facebook'
+    twitter:      'Share on Twitter'
+    googleplus:   'Share on Google+'
+    linkedin:     'Share on LinkedIn'
+    digg:         'Share on Digg'
+    tumblr:       'Share on Tumblr'
+    reddit:       'Share on Reddit'
+    stumbleupon:  'Share on StumbleUpon'
+    hackernews:   'Share on Hacker News'
+  post:
+    updated:        'Updated'
+    minute_read:    'minute read'
+    related_posts:  'Related Posts'
+  index:
+    coming_soon: 'Coming soon...'
+  contact:
+    email:    'Email Address'
+    content:  'What would you like to say?'
+    subject:  'New submission!'
+    submit:   'Say Hello'
+    ajax:
+      sending:  'sending..'
+      sent:     'Message sent!'
+      error:    'Error!'
+  thanks: 'Thanks for contacting us. We will reply as soon as possible.'
+  og_locale: 'en_US'
+
+
 # Build settings
 markdown:     kramdown
 redcarpet:
@@ -58,4 +92,9 @@ paginate:     4
 sass:
   compressed: true
 
-gems: [jekyll-paginate]
+# gems: [jekyll-paginate]
+gems:
+  - jekyll-paginate
+  - jekyll-sitemap
+# https://github.com/jekyll/jekyll/issues/2938
+exclude: [vendor]
