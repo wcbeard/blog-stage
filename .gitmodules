@@ -14,3 +14,6 @@
 [submodule "_notebooks/boy_who_lived"]
 	path = _notebooks/boy_who_lived
 	url = https://github.com/d10genes/boy_who_lived.git
+[submodule "_notebooks/word2vec"]
+	path = _notebooks/word2vec
+	url = /Users/williambeard/Dropbox/dev/vec
