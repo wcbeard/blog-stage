@@ -13,7 +13,6 @@
 <!-- <script type="text/javascript" src="/MathJax/MathJax.js?config=TeX-AMS_HTML-full"></script> -->
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML-full"> </script>
 <style type="text/css">
-
   .input_hidden {
     display: none;
     //  margin-top: 5px;
@@ -40,7 +39,6 @@
     font-family: Consolas, monospace;
     font-size: 12px;
   }*/
-
   /*p {
     font-size:20px;
     font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
@@ -60,9 +58,6 @@
   h2,h3,h4{
     text-align: left;
   }
-
-
-
   </style>
 
   <script>
@@ -77,7 +72,23 @@
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>A few months ago, the <a href="http://en.wikipedia.org/wiki/2013_IRS_scandal">undending</a> <a href="http://thelead.blogs.cnn.com/2013/08/01/exclusive-dozens-of-cia-operatives-on-the-ground-during-benghazi-attack/">series</a> of <a href="http://www.usatoday.com/story/news/2013/05/13/justice-department-associated-press-telephone-records/2156521/">recent</a> <a href="http://en.wikipedia.org/wiki/2013_mass_surveillance_scandal">scandals</a> inspired me to see whether it would be possible to comb through the text of New York Times articles and automatically detect and identify different scandals that have occurred. I wanted to see if, given articles about the DOJ, IRS, NSA and all the rest, whether the text would be enough for an algorithm to identify them as distinct scandals and distinguish them from one another, in an unsupervised fashion.</p>
+<p>{"Title": "Modeling 20 years of scandals with python",
+"Date": "2013-7-4",
+"Category": "ipython",
+"Tags": "nlp, ipython, gensim, pandas",
+"slug": "scandal-modeling-with-python",
+"Author": "Chris"
+}</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Topic-detection-with-Pandas-and-Gensim">Topic detection with Pandas and Gensim<a class="anchor-link" href="#Topic-detection-with-Pandas-and-Gensim">&#182;</a></h1><p>A few months ago, the <a href="http://en.wikipedia.org/wiki/2013_IRS_scandal">undending</a> <a href="http://thelead.blogs.cnn.com/2013/08/01/exclusive-dozens-of-cia-operatives-on-the-ground-during-benghazi-attack/">series</a> of <a href="http://www.usatoday.com/story/news/2013/05/13/justice-department-associated-press-telephone-records/2156521/">recent</a> <a href="http://en.wikipedia.org/wiki/2013_mass_surveillance_scandal">scandals</a> inspired me to see whether it would be possible to comb through the text of New York Times articles and automatically detect and identify different scandals that have occurred. I wanted to see if, given articles about the DOJ, IRS, NSA and all the rest, whether the text would be enough for an algorithm to identify them as distinct scandals and distinguish them from one another, in an unsupervised fashion.</p>
 <p>This also gave me an excuse to explore <a href="http://radimrehurek.com/gensim/">gensim</a> and show off some of <a href="http://pandas.pydata.org/">pandas</a> capabilities for data-wrangling.</p>
 <p>The IPython notebook for this post is available at <a href="https://github.com/d10genes/nyt-nlp">this repo</a> (and I grabbed the ggplot-esque <a href="http://matplotlib.org/users/customizing.html">plot settings</a> from <a href="https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/tree/master/styles">Probabilistic Programming for Hackers</a>).</p>
 <p>Let's get started by by picking up where we left off scraping the data in <a href="|filename|nyt-scraping.ipynb">part 1</a>, and pull all those articles out of mongo.</p>

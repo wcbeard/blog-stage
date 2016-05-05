@@ -3,7 +3,9 @@ _site
 .DS_Store
 .jekyll-metadata
 _junk
+_notebooks
 Gemfile.lock
 
 # Ignore the config file that's used for gh-pages.
 _config.gh-pages.yml
+

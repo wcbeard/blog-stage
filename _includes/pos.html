@@ -13,7 +13,6 @@
 <!-- <script type="text/javascript" src="/MathJax/MathJax.js?config=TeX-AMS_HTML-full"></script> -->
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML-full"> </script>
 <style type="text/css">
-
   .input_hidden {
     display: none;
     //  margin-top: 5px;
@@ -40,7 +39,6 @@
     font-family: Consolas, monospace;
     font-size: 12px;
   }*/
-
   /*p {
     font-size:20px;
     font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
@@ -60,9 +58,6 @@
   h2,h3,h4{
     text-align: left;
   }
-
-
-
   </style>
 
   <script>
@@ -77,7 +72,8 @@
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Linear-chain-CRFs">Linear chain CRFs<a class="anchor-link" href="#Linear-chain-CRFs">&#182;</a></h1><p>This is less of a blog post, and more of my annotated progress in implementing CRF's based on Charles Elkan's very excellent <a href="http://videolectures.net/cikm08_elkan_llmacrf/">video</a> and <a href="http://cseweb.ucsd.edu/~elkan/250Bwinter2012/loglinearCRFs.pdf">pdf</a> tutorials in order to have a better understanding of log-linear models.</p>
+<p>This is less of a blog post, and more of my annotated progress in implementing CRF's based on Charles Elkan's very excellent <a href="http://videolectures.net/cikm08_elkan_llmacrf/">video</a> and <a href="http://cseweb.ucsd.edu/~elkan/250Bwinter2012/loglinearCRFs.pdf">pdf</a> tutorials to get a better understanding of log-linear models.</p>
+<p>This notebook contains a bunch of the core functions, though there are also some in <code>crf.py</code>. The full repo is <a href="https://github.com/d10genes/crf-edu">here</a>.</p>
 
 </div>
 </div>
@@ -87,11 +83,9 @@
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span class="kn">from</span> <span class="nn">py3k_imports</span> <span class="k">import</span> <span class="o">*</span> 
-<span class="kn">import</span> <span class="nn">project_imports3</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">project_imports3</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">project_imports3</span> <span class="k">import</span> <span class="o">*</span>
-
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span class="kn">import</span> <span class="nn">warnings</span><span class="p">;</span> <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">py3k_imports</span> <span class="k">import</span> <span class="o">*</span> 
+<span class="kn">from</span> <span class="nn">project_imports3</span> <span class="k">import</span> <span class="o">*</span>
 
 <span class="n">pu</span><span class="o">.</span><span class="n">psettings</span><span class="p">(</span><span class="n">pd</span><span class="p">)</span>
 <span class="n">pd</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">150</span>   <span class="c"># 200</span>
@@ -99,22 +93,6 @@
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>WARNING: myfunctools not found
-Hiding __getattr__
-Unhiding __getattr__
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -180,8 +158,8 @@ IPython.keyboard_manager.command_shortcuts.add_shortcut('Shift-m','ipython.merge
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span class="kn">import</span> <span class="nn">utils</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">utils</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">utils</span> <span class="k">import</span> <span class="o">*</span>
-<span class="kn">import</span> <span class="nn">crf</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">crf</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">crf</span> <span class="k">import</span> <span class="o">*</span>
+<div class=" highlight hl-ipython3"><pre><span class="kn">import</span> <span class="nn">utils</span><span class="p">;</span> <span class="kn">from</span> <span class="nn">utils</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">crf</span><span class="p">;</span> <span class="kn">from</span> <span class="nn">crf</span> <span class="k">import</span> <span class="o">*</span>
 <span class="n">FeatUtils</span><span class="o">.</span><span class="n">bookend</span> <span class="o">=</span> <span class="k">False</span>
 </pre></div>
 
@@ -220,7 +198,7 @@ p(\bar y | \bar x;w) =
 $$$$
 F_j(\bar x, \bar y) = 
 \sum_{i=1}^n f_j(y_{i-1}, y_i, \bar x, i)
-$$<p>$Z(\bar x, w)$ is the partition function, that sums the probabilities of all possible sequences to normalize the probability:</p>
+$$<p>$Z(\bar x, w)$ is the partition function, that sums the probabilities of all possible sequences to normalize it to a proper probability:</p>
 $$
 Z(x, w) = \sum_{y' \in Y} \exp \sum_{j=1} ^J w_j F_j (x, y').
 $$<p>This way of summing feature functions along a sequence can be seen as a way of extending logistic regression from a single (or multiclass) output to a model that outputs sequences.</p>
@@ -265,35 +243,21 @@ $$
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">init_u</span><span class="p">(</span><span class="n">m0</span><span class="p">):</span>
-    <span class="n">mu</span> <span class="o">=</span> <span class="n">m0</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-    <span class="n">ymax</span> <span class="o">=</span> <span class="n">mu</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">mu</span><span class="p">[</span><span class="n">ymax</span><span class="p">]</span>
-
-
-<span class="k">def</span> <span class="nf">init_score</span><span class="p">(</span><span class="n">tags</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">START</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">init_score</span><span class="p">(</span><span class="n">tags</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">START</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
     <span class="s">&quot;Base case for recurrent score calculation U&quot;</span>
     <span class="n">i</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="k">if</span> <span class="n">sort</span> <span class="k">else</span> <span class="n">tags</span><span class="p">)</span>
     <span class="n">i</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">i</span>
-</pre></div>
 
-</div>
-</div>
-</div>
 
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">get_u</span><span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">gf</span><span class="p">:</span> <span class="s">&quot;int -&gt; (Y, Y&#39;) -&gt; float&quot;</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">collect</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="k">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s">&#39;([max score], [max ix])&#39;</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">get_u</span><span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">gf</span><span class="p">:</span> <span class="s">&quot;int -&gt; (Y, Y&#39;) -&gt; float&quot;</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">collect</span><span class="o">=</span><span class="k">True</span><span class="p">,</span>
+          <span class="n">verbose</span><span class="o">=</span><span class="k">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s">&#39;([max score], [max ix])&#39;</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Recursively build up g_i matrices bottom up, adding y-1 score</span>
 <span class="sd">    to get max y score. Returns score.</span>
-<span class="sd">    - k is in terms of y vector, which is augmented with beginning and end tags</span>
-<span class="sd">    - also returns indices yprev that maximize y at each level to help reconstruct</span>
-<span class="sd">        most likely sequence</span>
+<span class="sd">    - k is in terms of y vector, which is augmented with beginning</span>
+<span class="sd">        and end tags</span>
+<span class="sd">    - also returns indices yprev that maximize y at each level to</span>
+<span class="sd">        help reconstruct tmost likely sequence</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pt</span> <span class="o">=</span> <span class="n">testprint</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
     <span class="n">imx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
@@ -343,7 +307,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">xbar</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">gf</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
@@ -367,7 +331,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="kn">import</span> <span class="nn">test</span><span class="p">;</span> <span class="n">reload</span><span class="p">(</span><span class="n">test</span><span class="p">);</span> <span class="kn">from</span> <span class="nn">test</span> <span class="k">import</span> <span class="o">*</span>
@@ -393,7 +357,7 @@ $$
 <li>Partition function $Z(\bar x, w) = \sum_{\bar y} \exp \sum _{j=1} ^ J w_j F_j (\bar x, \bar y) $ can be intractible if calculated naively (similar to argmax); forward-backward vectors can make it easier to compute</li>
 </ul>
 $$\alpha (k + 1,v) = \sum_u \alpha (k,u)[\exp g_{k+1}(u,v)] \in ℝ^m$$$$\alpha (0,y) = I(y=START)$$$$\beta (u, k) = \sum_v [\exp g_{k+1} (u, v)] \beta(v, k+1) $$$$\beta (u, n+1) = I(u= END) $$<p>Compute partition function $Z$ from either forward or backward vectors</p>
-$$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[There seems to be an error in the notes, which state that $Z(\bar x, w) = \sum_v \alpha(n, v) $. If this is the case, $Z$ calculated with $\alpha$ will never get a contribution from $g_{n+1}$, while $Z$ calculated with $\beta$ will in the $\beta(u, n)$ step.]</p>
+$$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[It seems there could be an error in the notes, which state that $Z(\bar x, w) = \sum_v \alpha(n, v) $. If this is the case, $Z$ calculated with $\alpha$ will never get a contribution from $g_{n+1}$, while $Z$ calculated with $\beta$ will in the $\beta(u, n)$ step.]</p>
 
 </div>
 </div>
@@ -414,7 +378,7 @@ $$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[The
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">mk_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">False</span><span class="p">):</span>
@@ -438,7 +402,8 @@ $$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[The
         <span class="k">if</span> <span class="n">vb</span><span class="p">:</span>
             <span class="n">names</span> <span class="o">=</span> <span class="s">&#39;exp[g{k1}] g{k1} a_{k}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k1</span><span class="o">=</span><span class="n">knext</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
             <span class="n">p</span><span class="p">(</span><span class="n">side_by_side</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">),</span> <span class="n">gnext</span><span class="p">,</span> <span class="n">ak</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">))</span>
-        <span class="c"># expsum = Series([sum([ak[u] * np.exp(gnext.loc[u, v]) for u in tags]) for v in tags], index=tags)</span>
+        <span class="c"># expsum = Series([sum([ak[u] * np.exp(gnext.loc[u, v])</span>
+        <span class="c">#            for u in tags]) for v in tags], index=tags)</span>
         <span class="c"># vectorizing is much faster:</span>
         <span class="n">expsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">ak</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">expsum</span>
@@ -461,9 +426,11 @@ $$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[The
         <span class="n">gnext</span> <span class="o">=</span> <span class="n">gf</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mat</span>
         <span class="n">bnext</span> <span class="o">=</span> <span class="n">get_bsum</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">vb</span><span class="p">:</span>
-            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;exp[g{}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s">&#39;g{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="s">&#39;b_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;exp[g{}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="s">&#39;g{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span>
+                     <span class="s">&#39;b_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
             <span class="n">p</span><span class="p">(</span><span class="n">side_by_side</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">),</span> <span class="n">gnext</span><span class="p">,</span> <span class="n">bnext</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">))</span>
-        <span class="c"># expsum = Series([sum([np.exp(gnext.loc[u, v]) * bnext[v] for v in tags]) for u in tags], index=tags)</span>
+        <span class="c"># expsum = Series([sum([np.exp(gnext.loc[u, v]) * bnext[v]</span>
+        <span class="c"># for v in tags]) for u in tags], index=tags)</span>
         <span class="n">expsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gnext</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">bnext</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">expsum</span>
     <span class="k">return</span> <span class="n">get_bsum</span>
@@ -476,7 +443,7 @@ $$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[The
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">test_fwd_bkwd</span><span class="p">():</span>
@@ -484,8 +451,9 @@ $$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[The
     <span class="n">x</span> <span class="o">=</span> <span class="n">EasyList</span><span class="p">([</span><span class="s">&#39;wd1&#39;</span><span class="p">,</span> <span class="s">&#39;pre-end&#39;</span><span class="p">])</span>
     <span class="n">fs</span> <span class="o">=</span> <span class="p">{</span>
         <span class="c"># &#39;eq_wd1&#39;: mk_word_tag(&#39;wd1&#39;, &#39;TAG1&#39;),</span>
-        <span class="s">&#39;pre_endx&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">yp</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;pre-end&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">END</span><span class="p">)</span>
-         <span class="p">}</span>
+        <span class="s">&#39;pre_endx&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">yp</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;pre-end&#39;</span><span class="p">)</span>
+                                         <span class="ow">and</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">END</span><span class="p">))</span>
+    <span class="p">}</span>
     <span class="n">ws</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">mkwts1</span><span class="p">(</span><span class="n">fs</span><span class="p">),</span> <span class="p">{</span><span class="s">&#39;pre_endx&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
     <span class="n">gf</span> <span class="o">=</span> <span class="n">G</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tgs</span><span class="p">,</span> <span class="n">xbar</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="n">ws</span><span class="p">)</span>
 
@@ -510,7 +478,7 @@ $$ Z(\bar x, w) = \beta(START, 0) $$$$ Z(\bar x, w) = \alpha(n+1, END) $$<p>[The
 <div class="output">
 
 
-<div class="output_area"><div class="prompt output_prompt">Out[11]:</div>
+<div class="output_area"><div class="prompt output_prompt">Out[10]:</div>
 
 
 <div class="output_text output_subarea output_execute_result">
@@ -544,7 +512,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">sdot</span><span class="p">(</span><span class="n">s1</span><span class="p">:</span> <span class="n">Series</span><span class="p">,</span> <span class="n">s2</span><span class="p">:</span> <span class="n">Series</span><span class="p">):</span>
@@ -561,7 +529,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">expectation2</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">fj</span><span class="p">):</span>
@@ -580,7 +548,8 @@ $$
         <span class="n">gfix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gf</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">mat</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="n">alpha_vec</span> <span class="o">=</span> <span class="n">asummer</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">beta_vec</span> <span class="o">=</span> <span class="n">bsummer</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-        <span class="n">fmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">fj</span><span class="p">(</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">]</span> <span class="k">for</span> <span class="n">yprev</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">])</span>
+        <span class="n">fmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">fj</span><span class="p">(</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">yprev</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">])</span>
         <span class="n">smat</span> <span class="o">=</span> <span class="n">sdot</span><span class="p">(</span><span class="n">alpha_vec</span><span class="p">,</span> <span class="n">beta_vec</span><span class="p">)</span> <span class="o">*</span> <span class="n">gfix</span> <span class="o">*</span> <span class="n">fmat</span>
         <span class="k">return</span> <span class="n">smat</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="c">#.sum()</span>
     
@@ -597,7 +566,8 @@ $$
         <span class="n">alpha_vec</span> <span class="o">=</span> <span class="n">get_asum</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">beta_vec</span> <span class="o">=</span> <span class="n">get_bsum</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
         <span class="n">ss</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">fj</span><span class="p">(</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha_vec</span><span class="p">[</span><span class="n">yprev</span><span class="p">]</span> <span class="o">*</span> <span class="n">gfix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta_vec</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                <span class="p">[</span><span class="n">fj</span><span class="p">(</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha_vec</span><span class="p">[</span><span class="n">yprev</span><span class="p">]</span>
+                 <span class="o">*</span> <span class="n">gfix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">yprev</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta_vec</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">yprev</span> <span class="ow">in</span> <span class="n">tgs</span>
             <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">tgs</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">ss</span> <span class="o">/</span> <span class="n">za</span>
@@ -619,7 +589,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">partial_d</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">fj</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">Fj</span><span class="o">=</span><span class="k">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -634,7 +604,8 @@ $$
 
 <span class="k">def</span> <span class="nf">prob</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
     <span class="n">Fs</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">valmap</span><span class="p">(</span><span class="n">FeatUtils</span><span class="o">.</span><span class="n">mk_sum</span><span class="p">,</span> <span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">Fj</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">gf</span><span class="o">.</span><span class="n">ws</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span> <span class="k">for</span> <span class="n">fname</span><span class="p">,</span> <span class="n">Fj</span> <span class="ow">in</span> <span class="n">Fs</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">Fj</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">xbar</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">gf</span><span class="o">.</span><span class="n">ws</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">fname</span><span class="p">,</span> <span class="n">Fj</span> <span class="ow">in</span> <span class="n">Fs</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">norm</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">p</span>
     <span class="n">za</span> <span class="o">=</span> <span class="n">partition</span><span class="p">(</span><span class="n">gf</span><span class="o">=</span><span class="n">gf</span><span class="p">)</span>
@@ -672,7 +643,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="n">λ</span> <span class="o">=</span> <span class="mi">1</span>
@@ -695,8 +666,9 @@ $$
     <span class="k">return</span> <span class="n">ws</span>
 
 
-<span class="k">def</span> <span class="nf">train_j</span><span class="p">(</span><span class="n">zs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">EasyList</span><span class="p">,</span> <span class="n">AugmentY</span><span class="p">]],</span>
-          <span class="n">fjid</span><span class="o">=</span><span class="s">&#39;ly_VBZ&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=.</span><span class="mi">01</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">tgs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">train_j</span><span class="p">(</span><span class="n">zs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">EasyList</span><span class="p">,</span> <span class="n">AugmentY</span><span class="p">]],</span> <span class="n">fjid</span><span class="o">=</span><span class="s">&#39;ly_VBZ&#39;</span><span class="p">,</span>
+            <span class="n">fs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=.</span><span class="mi">01</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">vb</span><span class="o">=</span><span class="k">True</span><span class="p">,</span>
+            <span class="n">tgs</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
     <span class="n">ws1</span> <span class="o">=</span> <span class="n">ws</span>
     <span class="n">pt</span> <span class="o">=</span> <span class="n">testprint</span><span class="p">(</span><span class="n">vb</span><span class="p">)</span>
     <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -713,7 +685,8 @@ $$
             <span class="k">return</span> <span class="n">ws</span><span class="p">,</span> <span class="n">i</span>
         <span class="n">ws1</span> <span class="o">=</span> <span class="n">ws2</span>
         
-<span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">zs_</span><span class="p">,</span> <span class="n">gf</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=.</span><span class="mi">001</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">False</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">zs_</span><span class="p">,</span> <span class="n">gf</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=.</span><span class="mi">001</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="k">False</span><span class="p">,</span>
+          <span class="n">sec</span><span class="o">=</span><span class="k">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
     <span class="n">wst</span> <span class="o">=</span> <span class="p">(</span><span class="n">ws</span> <span class="ow">or</span> <span class="n">gf</span><span class="o">.</span><span class="n">ws</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">nr</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
     <span class="n">zs</span> <span class="o">=</span> <span class="n">zs_</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -721,8 +694,10 @@ $$
 
     <span class="k">for</span> <span class="n">fname</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">itime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">wst</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="n">train_j</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">fjid</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="n">wst</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="n">vb</span><span class="p">,</span> <span class="n">tgs</span><span class="o">=</span><span class="n">gf</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;trained in&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="s">&#39;iters: {:.2f} ({:.2f}s)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wst</span><span class="p">[</span><span class="n">fname</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">itime</span><span class="p">))</span>
+        <span class="n">wst</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="n">train_j</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">fjid</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">gf</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="n">ws</span><span class="o">=</span><span class="n">wst</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
+                         <span class="n">maxiter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="n">vb</span><span class="p">,</span> <span class="n">tgs</span><span class="o">=</span><span class="n">gf</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;trained in&#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="s">&#39;iters: {:.2f} ({:.2f}s)&#39;</span>
+              <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wst</span><span class="p">[</span><span class="n">fname</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">itime</span><span class="p">))</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">wst</span>
 
@@ -746,13 +721,14 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;data/pos.train.txt&#39;</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">txt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     
-<span class="n">sents</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">None</span><span class="p">,</span> <span class="p">[</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">sent</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()])</span> <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">txt</span><span class="p">[:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="p">)])</span>
+<span class="n">sents</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">None</span><span class="p">,</span> <span class="p">[</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">sent</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()])</span>
+                      <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">txt</span><span class="p">[:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="p">)])</span>
 <span class="n">X</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">itg</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">sents</span><span class="p">)</span>
 <span class="n">Y_</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">itg</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">sents</span><span class="p">)</span>
 <span class="n">Xa</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">EasyList</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
@@ -768,7 +744,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="c"># common bigrams</span>
@@ -792,14 +768,15 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="c"># Split training and testing examples</span>
 <span class="n">Zs</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Xa</span><span class="p">,</span> <span class="n">Ya</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Zs</span><span class="p">),</span> <span class="s">&#39;examples&#39;</span><span class="p">)</span>
 <span class="n">Zstrn</span> <span class="o">=</span> <span class="n">Zs</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span>
-<span class="n">Ztst</span> <span class="o">=</span> <span class="n">Zs</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">201</span><span class="p">]</span>  <span class="c"># it&#39;s too slow right now, so 100 examples in each set should do</span>
+<span class="n">Ztst</span> <span class="o">=</span> <span class="n">Zs</span><span class="p">[</span><span class="mi">100</span><span class="p">:</span><span class="mi">201</span><span class="p">]</span>  <span class="c"># it&#39;s too slow right now,</span>
+                    <span class="c"># so 100 examples in each set should do</span>
 </pre></div>
 
 </div>
@@ -823,7 +800,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="k">def</span> <span class="nf">hamming</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">ypred</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="k">True</span><span class="p">):</span>
@@ -838,15 +815,20 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span class="n">fs0</span> <span class="o">=</span> <span class="n">crf</span><span class="o">.</span><span class="n">fs</span>
-<span class="n">ws0</span> <span class="o">=</span> <span class="n">rand_weights</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">gf0</span> <span class="o">=</span> <span class="n">G</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs0</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="nb">sorted</span><span class="p">([</span><span class="n">START</span><span class="p">,</span> <span class="n">END</span><span class="p">]</span> <span class="o">+</span> <span class="n">tags</span><span class="p">),</span> <span class="n">xbar</span><span class="o">=</span><span class="n">EasyList</span><span class="p">([</span><span class="s">&#39;&#39;</span><span class="p">]),</span> <span class="n">ws</span><span class="o">=</span><span class="n">ws0</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span class="o">%%</span><span class="k">time</span>
+fs0 = crf.fs
+ws0 = rand_weights(fs, seed=0)
+gf0 = G(fs=fs0, tags=sorted([START, END] + tags),
+        xbar=EasyList([&#39;&#39;]), ws=ws0)
 
-<span class="o">%</span><span class="k">time</span> hams0 = [hamming(y.aug[1:-2], predict(gf=gf0._replace(xbar=x))[0][1:-2]) for x, y in Ztst[:]]
-<span class="nb">print</span><span class="p">(</span><span class="s">&#39;Initial error rate with random weights: {:.2%}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">hams0</span><span class="p">)))</span>
+hams0 = [
+    hamming(y.aug[1:-2], predict(gf=gf0._replace(xbar=x))[0][1:-2])
+    for x, y in Ztst[:]]
+print(&#39;Initial error rate with random weights: {:.2%}&#39;
+      .format(np.mean(hams0)))
 </pre></div>
 
 </div>
@@ -860,6 +842,8 @@ $$
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>Initial error rate with random weights: 77.69%
+CPU times: user 1min 46s, sys: 277 ms, total: 1min 46s
+Wall time: 1min 48s
 </pre>
 </div>
 </div>
@@ -882,7 +866,7 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="n">ws_trn</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;cap_nnp&#39;</span><span class="p">:</span> <span class="mf">5.42</span><span class="p">,</span> <span class="s">&#39;dig_cd&#39;</span><span class="p">:</span> <span class="mf">6.2</span><span class="p">,</span> <span class="s">&#39;dt_in&#39;</span><span class="p">:</span> <span class="mf">3.26</span><span class="p">,</span>
@@ -899,12 +883,16 @@ $$
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span class="n">gf_trn</span> <span class="o">=</span> <span class="n">gf0</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">ws</span><span class="o">=</span><span class="n">ws_trn</span><span class="p">)</span>
-<span class="o">%</span><span class="k">time</span> hams_trn = [hamming(y.aug[1:-2], predict(gf=gf_trn._replace(xbar=x))[0][1:-2]) for x, y in Ztst[:]]
-<span class="nb">print</span><span class="p">(</span><span class="s">&#39;Error rate after training weights: {:.2%}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">hams_trn</span><span class="p">)))</span>
+<div class=" highlight hl-ipython3"><pre><span class="o">%%</span><span class="k">time</span>
+gf_trn = gf0._replace(ws=ws_trn)
+hams_trn = [hamming(y.aug[1:-2],
+                    predict(gf=gf_trn._replace(xbar=x))[0][1:-2])
+            for x, y in Ztst[:]]
+print(&#39;Error rate after training weights: {:.2%}&#39;
+      .format(np.mean(hams_trn)))
 </pre></div>
 
 </div>
@@ -917,9 +905,9 @@ $$
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 42.9 s, sys: 234 ms, total: 43.1 s
-Wall time: 47.3 s
-Error rate after training weights: 64.34%
+<pre>Error rate after training weights: 64.34%
+CPU times: user 41.2 s, sys: 104 ms, total: 41.3 s
+Wall time: 41.9 s
 </pre>
 </div>
 </div>
@@ -940,7 +928,7 @@ Error rate after training weights: 64.34%
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span class="o">!</span>osascript -e beep
@@ -950,13 +938,4 @@ Error rate after training weights: 64.34%
 </div>
 </div>
 
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Extra">Extra<a class="anchor-link" href="#Extra">&#182;</a></h2>
-</div>
-</div>
 </div>
