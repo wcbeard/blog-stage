@@ -4,7 +4,7 @@ email:       wcbeard10@gmail.com
 author:      Chris Beard
 description: "Desc"
 baseurl:     "/blog"
-url:         "http://d10genes.github.io/blog/"  # "/"  # d10genes.github.io
+url:         "http://d10genes.github.io"  # "/"  # d10genes.github.io
 date_format: "%b %-d, %Y"
 
 # Google services
