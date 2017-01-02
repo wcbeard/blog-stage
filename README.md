@@ -1,7 +1,7 @@
 # Note to self
 
 ##Dev
-    jekyll serve --watch --baseurl ''
+    jekyll serve --watch --baseurl '/blog'
 
 ## Submodules
 Ok, gh-pages broke with my submodules, so I'm doing [yet another repo that collects these](https://github.com/d10genes/notebooks), cloning it locally, and symlinking `ln -s ~/repos/notebooks/subs ~/repos/notebooks/blogistic/_notebooks`
