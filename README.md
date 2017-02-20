@@ -18,11 +18,15 @@ Create markdown file in `_posts` directory with following format
 ```
 ---
 layout:     post
-title:      <Title>
-date:       2016-M-D
-summary:    <Blurb>
-tags:       <Tags>
-ipynb:      <path to ipynb file>
+title:      Christmas on Sundays
+date:       2017-01-02
+summary:    Quick look at the frequency of a Holiday occuring on a weekend
+tags:       python,std-lib
+ipynb:      _notebooks/blog_projects/xmas_dow.ipynb
+---
+
+{% include xmas_dow.html %}
+
 ---
 ```
 
