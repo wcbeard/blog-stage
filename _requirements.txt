@@ -4,3 +4,4 @@ PyYAML
 flake8
 ipdb
 nbconvert
+jupyter_contrib_nbextensions

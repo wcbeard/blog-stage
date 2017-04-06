@@ -38,8 +38,11 @@ def post_todict(posttxt, ret_yaml=False):
 
 
 def nbconvert(frm, to, template=None):
+    "https://github.com/jupyter/nbconvert/issues/293"
     template = template or join(NOTEBOOK_DIR, 'output_toggle_html.tpl')
-    cmd = ['ipython', 'nbconvert', '--to', 'html', '--template', template,
+
+    template, to, frm = map(abspath, [template, to, frm])
+    cmd = ['jupyter', 'nbconvert', '--to', 'html', '--template', template,
            '--output', to, frm, ]
     try:
         res = subprocess.check_output(cmd, cwd=abspath('.'), stderr=subprocess.STDOUT)

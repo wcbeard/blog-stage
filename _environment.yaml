@@ -1,0 +1,20 @@
+name: jekyll
+channels:
+#  - defaults
+#  - conda-forge
+dependencies:
+- python=3
+
+# Bare necessities
+- flake8
+- jupyter
+- notebook < 5
+
+- pip:
+  - toolz
+  - pytest
+  - jupyter_contrib_nbextensions
+  - PyYAML
+  # - ipdb
+  - nbconvert
+
